@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ query }}</title>
+    <style type="text/css">
+        .media
+        {
+            width: 800px;
+            height: 200px;
+            text-align: left;/*(让div中的内容居中)*/
+            /*margin-top: 200px;*/
+            margin-left: 200px;
+        }
+        .text-title
+        {
+            margin-top: 50px;
+            margin-left: 200px;
+        }
+        .divForm
+        {
+            margin-left: 200px;
+        }
+        input[type="text"]
+        {
+            size: 500px;
+            width: 500px;
+            height: 30px;
+        }
+        input[type="submit"]
+        {
+            height: 30px;
+        }
+        .pagination
+        {
+            margin-left: 200px;
+        }
+    </style>
+</head>
+<body>
+
+
+{% block content %}
+    <div class="col-md-9">
+    <div class="text-title">
+        <h1>Search results</h1>
+    </div>
+　　<div class="divForm">
+        <form action="/search/" method="get">
+            <input type="text" name="q" value={{ query }}>
+            <input type="submit" value="search">
+        </form>
+    </div>
+    {% if query %}
+        {% for object in object_list %}
+            <div class="media">
+                {% if result.object.avatar %}
+                    <div class="media-left">
+                        <img src="{{  result.object.avatar.url }}" alt="avatar"
+                             style="max-width: 100px; border-radius: 20px">
+                    </div>
+                {% endif %}
+                <div class="media-body">
+                    <a href="{{  object.url }}" class="list-group-item active">
+                        <h4 class="list-group-item-heading">
+                            {{ object.name }}
+                        </h4>
+                    </a>
+                    <p class="list-group-item-text">
+                        <small>
+                            {{ object.description|slice:'600'}}
+                        </small>
+                    </p>
+                </div>
+            </div>
+        {% empty %}
+            <h3>No relevant recipe</h3>
+        {% endfor %}
+    {% endif %}
+
+    <div class="pagination">
+    <span class="step-links">
+        {% if page.has_previous %}
+            <a href="?q={{ query }}&page={{ page.previous_page_number }}">上一页</a>
+        {% endif %}
+
+        <span class="current">
+            Page{{ page.number }} of {{ page.paginator.num_pages }}
+        </span>
+
+        {% if page.has_next %}
+            <a href="?q={{ query }}&page={{ page.next_page_number }}">下一页</a>
+        {% endif %}
+    </span>
+</div></div>
+
+{% endblock %}
+</body>
+</html>
