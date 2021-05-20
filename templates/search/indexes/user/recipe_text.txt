@@ -1,0 +1,3 @@
+{{object.name}}
+{{object.tags}}
+{{object.description}}
