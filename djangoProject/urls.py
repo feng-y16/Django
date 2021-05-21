@@ -20,10 +20,11 @@ import haystack
 from haystack.views import SearchView
 from django.conf import settings
 from django.conf.urls.static import static
+from user.views import *
 
 urlpatterns = [
     url('', include('user.urls')),
     path('admin/', admin.site.urls),
+    url(r'^search/?$', search_recipe, name='search_view'),
     url(r'^search/', include('haystack.urls')),
-    url(r'^search/$', SearchView(), name='haystack_search'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

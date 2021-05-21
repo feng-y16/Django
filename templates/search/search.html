@@ -1,80 +1,102 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ query }} Recipher</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/static/images/favicon.ico" />
+    <style>
+        input[type="text"] {
+            size: 400px;
+            width: 400px;
+            height: 35px;
+        }
+    </style>
+</head>
 {% block head %}
-<link rel="stylesheet" href="/static/css/bootstrap.min.css">
-<script src="/static/js/jquery.min.js"></script>
-<script src="/static/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
 
 {% endblock %}
 {% block navbar %}
- <nav class="navbar navbar-default">
-  <div class="container">
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <a class="navbar-brand" href="#">HOME</a>
-    </div>
-    <div class="collapse navbar-collapse" id="myNavbar">
-      <ul class="nav navbar-nav navbar-right">
-        <li><input type="submit" class="btn btn-primary" value="Add Customer">  </li>
-    </ul>
-    </div>
-  </div>
-</nav>
+    <nav class="navbar navbar-default">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/search/">HOME</a>
+            </div>
+            <div class="collapse navbar-collapse" id="myNavbar">
+{#                <ul class="nav navbar-nav navbar-right">#}
+{#                    <li><input type="submit" class="btn btn-primary" value="Add Customer"></li>#}
+{#                </ul>#}
+            </div>
+        </div>
+    </nav>
 {% endblock %}
 {% block content %}
-<div class="container-fluid bg-3 text-center">
-<form method="get" action="/search/" class="form" role="form">
-        {{ form.non_field_errors }}
-        <div class="form-group">
+    <div class="container-fluid bg-3 text-center">
+        <img src="/static/images/icon.png" width="96" height="96"  alt="Recipe Searcher"/>
+        <span style="font-size: 40pt; vertical-align: middle">
+            <strong>&nbsp;Recipe Searcher</strong>
+        </span>
+        <br />
+        <br />
+        <form method="get" action="" class="form" role="form">
+            {{ form.non_field_errors }}
+            <div class="form-group">
                 {{ form.as_p }}
-        </div>
-        <div class="form-group">
-            <input type="submit" class="btn btn-primary" value="Search">
-        </div>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="text" name="q" style="vertical-align: middle" value={{ query }}>
+                </label>
+                <input type="submit" class="btn btn-primary" value="Search" style="vertical-align: middle">
+            </div>
 
-        {% if query %}
-            <h3>Results</h3>
+            {% if query %}
+                <h3>Results</h3>
 
-        <div class="container-fluid bg-4 text-left">
-                <div class="row">
+                <div class="container-fluid bg-4 text-left">
+                    <div class="row">
 
-                    {% for result in page.object_list %}
+                        {% for result in page.object_list %}
 
-                <div class="col-sm-4">
-                  <div class="thumbnail">
+                            <div class="col-sm-4">
+                                <div class="thumbnail">
 
-                    <div class="form-group">
-                        <p>Name : {{result.name}} </p>
+                                    <div class="form-group">
+                                        <p>Name : {{ result.name }} </p>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <p>Tags : {{ result.tags }} </p>
+
+                                    </div>
+
+                                    <div class="form-group">
+                                        <p>Description : {{ result.description }} </p>
+                                    </div>
+                                    {#                    <div class="form-group">#}
+                                    {#                        <p>Email : {{result.email}} </p>#}
+                                    {#                    </div>#}
+                                    {#                    <div class="form-group">#}
+                                    {#                        <p>Status : {{result.customer_status}} </p>#}
+                                    {#                    </div>#}
+                                </div>
+                            </div>
+                        {% empty %}
+
+                            <p style="text-align:center">No results found.</p>
+                        {% endfor %}
                     </div>
-
-                    <div class="form-group">
-                        <p>Tags : {{result.tags}} </p>
-
-                    </div>
-
-                    <div class="form-group">
-                        <p>Description : {{result.description}} </p>
-                    </div>
-{#                    <div class="form-group">#}
-{#                        <p>Email : {{result.email}} </p>#}
-{#                    </div>#}
-{#                    <div class="form-group">#}
-{#                        <p>Status : {{result.customer_status}} </p>#}
-{#                    </div>#}
-                  </div>
                 </div>
-                {% empty %}
 
-                   <p style="text-center">No results found.</p>
-                    {% endfor%}
-                </div>
-        </div>
-
-        {% endif %}
-</form>
-</div>
+            {% endif %}
+        </form>
+    </div>
 
 {% endblock %}

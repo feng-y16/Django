@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'haystack'
+    'rest_framework',
+    'haystack',
+    'whoosh',
 ]
 
 MIDDLEWARE = [
@@ -56,8 +58,7 @@ ROOT_URLCONF = 'djangoProject.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')]
-        ,
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -87,8 +88,10 @@ DATABASES = {
 HAYSTACK_CONNECTIONS = {
     'default': {
         'ENGINE': 'haystack.backends.whoosh_backend.WhooshEngine',
-        'URL': 'http://127.0.0.1:9200/',
-        'INDEX_NAME': 'haystack',
+        # 'URL': 'http://127.0.0.1:9200/',
+        # 'INDEX_NAME': 'haystack',
+        'PATH': os.path.join(os.path.dirname(__file__), 'whoosh_index'),
+        # 'PATH': os.path.join(os.path.dirname(__file__), 'xapian_index'),
     },
 }
 
@@ -133,3 +136,4 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+HAYSTACK_DOCUMENT_FIELD = 'text'

@@ -1,5 +1,6 @@
 /.idea/
 backup/
 /user/migrations
+djangoProject/whoosh_index/
 db.sqlite3
 */__pycache__
