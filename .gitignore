@@ -4,3 +4,5 @@ backup/
 djangoProject/whoosh_index/
 db.sqlite3
 */__pycache__
+*.pyc
+*.log
