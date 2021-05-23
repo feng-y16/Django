@@ -31,7 +31,7 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
     # import http
     # http.client.HTTPConnection._http_vsn = 10
     # http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
-    url_filter = re.compile(r'/user/[a-zA-Z0-9-_]+', re.S)
+    url_filter = re.compile(r'/recipe/[a-zA-Z0-9-_]+', re.S)
     calories_filter = re.compile(r'[0-9]+(?=Calories)', re.S)
     weight_filter = re.compile(r'[0-9]+g|[0-9]+mg', re.S)
     word_filter = re.compile(r'[A-Z][a-z]+', re.S)
@@ -45,8 +45,12 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
     tag_filter = re.compile(r'(?<=### Recipe Tags\s\s\s\s\*\s)[^#]+(?=\s\s###)', re.S)
     tag_word_filter = re.compile(r'(?<=\[)[^]]+(?=])', re.S)
 
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                             "Chrome/87.0.4280.66 Safari/537.36"}
+    headers = {"sec-ch-ua": '"Google Chrome";v="89", "Chromium";v="89", ";Not A Brand";v="99"',
+               "sec-ch-ua-mobile": "?0",
+               "Upgrade-Insecure-Requests": "1",
+               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                             "Chrome/89.0.4389.82 Safari/537.36",
+                }
     with requests.get('https://www.yummly.com/recipes?q=' + query + '&taste-pref-appended=true', headers=headers) as r:
         SERP = html2text(r.content.decode()).replace('\n', '')
     urls = ['https://www.yummly.com' + postfix for postfix in url_filter.findall(SERP)]
@@ -54,19 +58,21 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
     recipe_data_list = []
     for url in urls:
         recipe_data = collections.OrderedDict()
+        if '"' in url:
+            continue
         recipe_data['url'] = url
         with requests.get(url, headers=headers) as r:
             detailed_data = html2text(r.content.decode()).replace('\n', ' ')
 
         name = name_filter.findall(detailed_data)
         if len(name) > 0:
-            recipe_data['name'] = name[0]
+            recipe_data['name'] = name[0].replace('"', "'")
         else:
             continue
 
         description = description_filter.findall(detailed_data)
         if len(description) > 0:
-            recipe_data['description'] = description[0]
+            recipe_data['description'] = description[0].replace('"', "'")
         else:
             recipe_data['description'] = ''
 
@@ -109,62 +115,63 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
             for nutrition_key in ['sodium', 'fat', 'protein', 'carbs', 'fiber']:
                 recipe_data[nutrition_key] = -1
 
-        print(recipe_data)
         # text = requests.get(url)
         # text.encoding = 'utf-8'
         # html = etree.HTML(text.text)
         # path = html.xpath('/html/body/div[3]/div[1]/div[3]/div/div/div/div/div[2]/div[2]/img/@src')
         # soup = BeautifulSoup(text.text, 'lxml')
         insert(recipe_data, sql_connection)
+        sql_connection.commit()
         recipe_data_list.append(recipe_data)
     return recipe_data_list
 
 
 def insert(recipe_data, sql_connection):
-    c = sql_connection.cursor()
     try:
-        id = c.execute("SELECT MAX(ID) FROM RECIPE").__next__()[0]
-        if id is None:
-            id = 0
+        id_next = sql_connection.execute("SELECT MAX(ID) FROM user_recipe").__next__()[0]
+        if id_next is None:
+            id_next = 0
         else:
-            id += 1
-    except sqlite3.OperationalError:
-        id = 0
+            id_next += 1
     except StopIteration:
-        id = 0
+        print("SI")
+        id_next = 0
     tags = ''
     for tag in recipe_data['tags']:
         tags += ',' + tag
-    tags = tags[1:]
+    tags = tags[1:].replace('"', "'")
     ingredients = ''
     for ingredient in recipe_data['ingredients']:
         ingredients += ',' + ingredient
-    ingredients = ingredients[1:]
-    command = "INSERT INTO user_recipe (id,name,url,tages,decsription,ingredients,time," \
+    ingredients = ingredients[1:].replace('"', "'")
+    command = "INSERT INTO user_recipe (id,name,url,tags,description,ingredients,time," \
               "calories,sodium,fat,protein,carbs,fiber,imgurl) "\
-              f"VALUES ({id}, '{recipe_data['name']}', '{recipe_data['url']}', '{tags}', " \
-              f"'{recipe_data['description']}', '{ingredients}', "\
-              f"{recipe_data['time']}, {recipe_data['calories']}, {recipe_data['sodium']}, {recipe_data['fat']}, "\
-              f"{recipe_data['protein']}, {recipe_data['carbs']}, {recipe_data['fiber']}, '')"
-    try:
-        c.execute(command)
-    except:
-        pdb.set_trace()
-    print(id)
-    sql_connection.commit()
+              f"VALUES ({id_next}, " \
+              f'"{recipe_data["name"]}", ' \
+              f'"{recipe_data["url"]}", ' \
+              f'"{tags}", ' \
+              f'"{recipe_data["description"]}", ' \
+              f'"{ingredients}", ' \
+              f"{recipe_data['time']}, " \
+              f"{recipe_data['calories']}, " \
+              f"{recipe_data['sodium']}, " \
+              f"{recipe_data['fat']}, "\
+              f"{recipe_data['protein']}, " \
+              f"{recipe_data['carbs']}, " \
+              f"{recipe_data['fiber']}, " \
+              f'"")'
+    # print(command)
+    sql_connection.execute(command)
 
 
 if __name__ == "__main__":
     args = parse_args()
-    connection = sqlite3.connect('../db.sqlite3')
-    c = connection.cursor()
+    connection = sqlite3.connect('db.sqlite3')
     try:
-        c.execute("delete from user_recipe")
+        connection.execute("DELETE FROM user_recipe")
         connection.commit()
-        # c.execute("update sqlitesequence SET seq = 0 where name = 'USER_RECIPE'")
-        # connection.commit()
     except sqlite3.OperationalError:
-        c.execute('''CREATE TABLE user_recipe
+        connection.execute('''CREATE TABLE user_recipe
                (id            INT PRIMARY KEY     NOT NULL,
                name           TEXT                NOT NULL,
                url            TEXT                NOT NULL,
@@ -181,3 +188,4 @@ if __name__ == "__main__":
                imgurl         TEXT);''')
         connection.commit()
     search_yummly(url_num=args.url_num, sql_connection=connection)
+    connection.close()
