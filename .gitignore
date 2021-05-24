@@ -7,4 +7,4 @@ db.sqlite3
 *.pyc
 *.log
 *.npy
-*.txt
+/static/queries/queries.txt

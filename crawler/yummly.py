@@ -28,7 +28,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def search_yummly(query='cheese', url_num=10, sql_connection=None):
+def search_yummly(query='cheese', url_num=10, sql_connection=None, target_path=None):
     # import http
     # http.client.HTTPConnection._http_vsn = 10
     # http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
@@ -66,8 +66,11 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                              "Chrome/89.0.4389.82 Safari/537.36",
                }
-    with requests.get('https://www.yummly.com/recipes?q=' + query + '&taste-pref-appended=true', headers=headers) as r:
-        SERP = html2text(r.content.decode()).replace('\n', '')
+    try:
+        with requests.get('https://www.yummly.com/recipes?q=' + query + '&taste-pref-appended=true', headers=headers) as r:
+            SERP = html2text(r.content.decode()).replace('\n', '')
+    except requests.exceptions.ChunkedEncodingError:
+        return []
 
     urls = ['https://www.yummly.com' + postfix for postfix in url_filter.findall(SERP)]
     urls = list(dict.fromkeys(urls))[0:url_num]
@@ -77,8 +80,11 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
         if '"' in url:
             continue
         recipe_data['url'] = url
-        with requests.get(url, headers=headers) as r:
-            detailed_data = html2text(r.content.decode()).replace('\n', ' ')
+        try:
+            with requests.get(url, headers=headers) as r:
+                detailed_data = html2text(r.content.decode()).replace('\n', ' ')
+        except requests.exceptions.ChunkedEncodingError:
+            continue
 
         detailed_url = detailed_url_filter.findall(detailed_data)
         if len(detailed_url) > 0:
@@ -148,6 +154,9 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
         insert(recipe_data, sql_connection)
         sql_connection.commit()
         recipe_data_list.append(recipe_data)
+    if target_path is not None:
+        np.save(target_path, np.array(recipe_data_list))
+    # sql_connection.close()
     return recipe_data_list
 
 
