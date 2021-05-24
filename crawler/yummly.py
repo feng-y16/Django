@@ -1,3 +1,4 @@
+import urllib
 import urllib.request
 import requests
 import time
@@ -31,16 +32,30 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
     # import http
     # http.client.HTTPConnection._http_vsn = 10
     # http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
+
+    import http
+
+    def patch_http_response_read(func):
+        def inner(*args):
+            try:
+                return func(*args)
+            except http.client.IncompleteRead as e:
+                return e.partial
+
+        return inner
+
+    http.client.HTTPResponse.read = patch_http_response_read(http.client.HTTPResponse.read)
     url_filter = re.compile(r'/recipe/[a-zA-Z0-9-_]+', re.S)
     calories_filter = re.compile(r'[0-9]+(?=Calories)', re.S)
-    weight_filter = re.compile(r'[0-9]+g|[0-9]+mg', re.S)
+    weight_filter = re.compile(r'[0-9<>]+g|[0-9]+mg', re.S)
     word_filter = re.compile(r'[A-Z][a-z]+', re.S)
     percent_filter = re.compile(r'[0-9]+%', re.S)
-    number_filter = re.compile(r'[0-9]+', re.S)
+    img_url_filter = re.compile(r'https%3A%2F%2Flh[a-zA-Z0-9-_ %.=?]+|https://lh[a-zA-Z0-9-_ %.=/?]+', re.S)
+    detailed_url_filter = re.compile(r'(?<=\[Read\sDirections]\()[^\s]+(?=\s"Read)', re.S)
     name_filter = re.compile(r'(?<=\s\s#\s)[^#\[\]]+(?=\s\s\[)', re.S)
     time_filter = re.compile(r'(?<=Ingredients\s\s)[0-9]+[^\s]+(?=\s\s)', re.S)
     description_filter = re.compile(r'(?<=### Description\s\s)[^#]+(?=\s\s###)', re.S)
-    nutrition_filter = re.compile(r'(?<=NutritionView More)[a-zA-Z0-9 %]+(?= \*)', re.S)
+    nutrition_filter = re.compile(r'(?<=NutritionView More)[a-zA-Z0-9 %<>]+(?= \*)', re.S)
     ingredient_filter = re.compile(r'(?<=SERVINGS\s\s\*\s)[^#]+(?=\s\sDid you )', re.S)
     tag_filter = re.compile(r'(?<=### Recipe Tags\s\s\s\s\*\s)[^#]+(?=\s\s###)', re.S)
     tag_word_filter = re.compile(r'(?<=\[)[^]]+(?=])', re.S)
@@ -50,9 +65,10 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
                "Upgrade-Insecure-Requests": "1",
                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
                              "Chrome/89.0.4389.82 Safari/537.36",
-                }
+               }
     with requests.get('https://www.yummly.com/recipes?q=' + query + '&taste-pref-appended=true', headers=headers) as r:
         SERP = html2text(r.content.decode()).replace('\n', '')
+
     urls = ['https://www.yummly.com' + postfix for postfix in url_filter.findall(SERP)]
     urls = list(dict.fromkeys(urls))[0:url_num]
     recipe_data_list = []
@@ -63,6 +79,15 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
         recipe_data['url'] = url
         with requests.get(url, headers=headers) as r:
             detailed_data = html2text(r.content.decode()).replace('\n', ' ')
+
+        detailed_url = detailed_url_filter.findall(detailed_data)
+        if len(detailed_url) > 0:
+            if '"' not in detailed_url[0]:
+                recipe_data['url'] = detailed_url[0]
+            else:
+                recipe_data['url'] += '#directions'
+        else:
+            recipe_data['url'] += '#directions'
 
         name = name_filter.findall(detailed_data)
         if len(name) > 0:
@@ -84,7 +109,7 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
 
         time_needed = time_filter.findall(detailed_data)
         if len(time_needed) > 0:
-            recipe_data['time'] = number_filter.findall(time_needed[0])[0]
+            recipe_data['time'] = time_needed[0].lower()
         else:
             recipe_data['time'] = -1
 
@@ -100,26 +125,26 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
             recipe_data['nutrition_keys'] = word_filter.findall(nutrition)[1:]
             recipe_data['nutrition_percent'] = percent_filter.findall(nutrition)
             recipe_data['nutrition_weight'] = weight_filter.findall(nutrition)
-            recipe_data['calories'] = calories_filter.findall(nutrition)[0]
-            for nutrition_key in ['sodium', 'fat', 'protein', 'carbs', 'fiber']:
+            recipe_data['calories'] = calories_filter.findall(nutrition)[0] + 'calories'
+            for nutrition_key in ['Sodium', 'Fat', 'Protein', 'Carbs', 'Fiber']:
                 try:
                     index = recipe_data['nutrition_keys'].index(nutrition_key)
-                    recipe_data[nutrition_key] = number_filter.findall(recipe_data['nutrition_weight'][index])[0]
+                    recipe_data[nutrition_key.lower()] = recipe_data['nutrition_weight'][index]
                 except ValueError:
-                    recipe_data[nutrition_key] = -1
+                    recipe_data[nutrition_key.lower()] = '-1'
         else:
             recipe_data['nutrition_keys'] = []
             recipe_data['nutrition_percent'] = []
             recipe_data['nutrition_weight'] = []
-            recipe_data['calories'] = -1
+            recipe_data['calories'] = '-1'
             for nutrition_key in ['sodium', 'fat', 'protein', 'carbs', 'fiber']:
-                recipe_data[nutrition_key] = -1
+                recipe_data[nutrition_key] = '-1'
 
-        # text = requests.get(url)
-        # text.encoding = 'utf-8'
-        # html = etree.HTML(text.text)
-        # path = html.xpath('/html/body/div[3]/div[1]/div[3]/div/div/div/div/div[2]/div[2]/img/@src')
-        # soup = BeautifulSoup(text.text, 'lxml')
+        img_url = img_url_filter.findall(detailed_data)
+        if len(img_url) > 0:
+            recipe_data['img_url'] = urllib.parse.unquote(img_url[0]).replace(' ', '')
+        else:
+            recipe_data['img_url'] = ''
         insert(recipe_data, sql_connection)
         sql_connection.commit()
         recipe_data_list.append(recipe_data)
@@ -127,15 +152,13 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None):
 
 
 def insert(recipe_data, sql_connection):
-    try:
-        id_next = sql_connection.execute("SELECT MAX(ID) FROM user_recipe").__next__()[0]
-        if id_next is None:
-            id_next = 0
-        else:
-            id_next += 1
-    except StopIteration:
-        print("SI")
+    if len(sql_connection.execute(f"SELECT url FROM user_recipe where url='{recipe_data['url']}'").fetchall()) > 0:
+        return
+    max_id = sql_connection.execute("SELECT MAX(ID) FROM user_recipe").fetchall()
+    if max_id[0][0] is None:
         id_next = 0
+    else:
+        id_next = max_id[0][0] + 1
     tags = ''
     for tag in recipe_data['tags']:
         tags += ',' + tag
@@ -152,20 +175,19 @@ def insert(recipe_data, sql_connection):
               f'"{tags}", ' \
               f'"{recipe_data["description"]}", ' \
               f'"{ingredients}", ' \
-              f"{recipe_data['time']}, " \
-              f"{recipe_data['calories']}, " \
-              f"{recipe_data['sodium']}, " \
-              f"{recipe_data['fat']}, "\
-              f"{recipe_data['protein']}, " \
-              f"{recipe_data['carbs']}, " \
-              f"{recipe_data['fiber']}, " \
-              f'"")'
-    # print(command)
+              f'"{recipe_data["time"]}", ' \
+              f'"{recipe_data["calories"]}", ' \
+              f'"{recipe_data["sodium"]}", ' \
+              f'"{recipe_data["fat"]}", '\
+              f'"{recipe_data["protein"]}", ' \
+              f'"{recipe_data["carbs"]}", ' \
+              f'"{recipe_data["fiber"]}", ' \
+              f'"{recipe_data["img_url"]}")'
     sql_connection.execute(command)
 
 
 if __name__ == "__main__":
-    args = parse_args()
+    yummly_args = parse_args()
     connection = sqlite3.connect('db.sqlite3')
     try:
         connection.execute("DELETE FROM user_recipe")
@@ -178,14 +200,14 @@ if __name__ == "__main__":
                tags           TEXT,
                description    TEXT,
                ingredients    TEXT,
-               time           REAL,
-               calories       REAL,
-               sodium         REAL,
-               fat            REAL,
-               protein        REAL,
-               carbs          REAL,
-               fiber          REAL,
+               time           TEXT,
+               calories       TEXT,
+               sodium         TEXT,
+               fat            TEXT,
+               protein        TEXT,
+               carbs          TEXT,
+               fiber          TEXT,
                imgurl         TEXT);''')
         connection.commit()
-    search_yummly(url_num=args.url_num, sql_connection=connection)
+    search_yummly(url_num=yummly_args.url_num, sql_connection=connection)
     connection.close()

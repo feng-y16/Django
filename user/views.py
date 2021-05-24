@@ -1,4 +1,5 @@
 import pdb
+import os
 
 from django.shortcuts import render
 from rest_framework.decorators import (
@@ -65,6 +66,14 @@ from haystack.generic_views import SearchView
 def search_recipe(request):
     if 'q' in request.GET:
         name = request.GET['q']
+        queries_path = 'static/queries/queries.txt'
+        if not os.path.isdir(os.path.dirname(queries_path)):
+            os.makedirs(os.path.dirname(queries_path))
+        if not os.path.isfile(queries_path):
+            with open(queries_path, 'w') as f:
+                f.write('')
+        with open(queries_path, 'a') as f:
+            f.write(f'{name}\n')
         recipes = SearchQuerySet().models(Recipe).exclude(no_such_field='x').filter(content=name)
         searched_data = []
         for i in recipes:
@@ -105,7 +114,7 @@ def search_recipe(request):
 # def search_recipe(request):
 #     try:
 #         name = request.GET['q']
-#     except django.utils.datastructures.MultiValueDictKeyError:
+#     except django.crawler.datastructures.MultiValueDictKeyError:
 #         return render(request, "search/search.html", {})
 #     print(name)
 #     recipe = SearchQuerySet().models(Recipe).autocomplete(first_name__startswith=name)
