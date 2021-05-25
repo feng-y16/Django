@@ -10,6 +10,21 @@
             width: 400px;
             height: 35px;
         }
+        .form-group-title{
+            font-size: 20px;
+            margin-bottom: 0;
+        }
+        .form-group-tags{
+            font-size: 10px;
+            color: gray;
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+        }
+
     </style>
 </head>
 {% block head %}
@@ -52,7 +67,7 @@
             </div>
             <div class="form-group">
                 <label>
-                    <input type="text" name="q" style="vertical-align: middle" value={{ query }}>
+                    <input type="text" name="q" style="vertical-align: middle" value="{{ query }}">
                 </label>
                 <input type="submit" class="btn btn-primary" value="Search" style="vertical-align: middle">
             </div>
@@ -68,18 +83,23 @@
                             <div class="col-sm-4">
                                 <div class="thumbnail">
 
-                                    <div class="form-group">
-                                        <p>Name : {{ result.name }} </p>
+                                    <div class="form-group-title">
+                                        <a href={{ result.url }}>{{ result.name }}</a>
+                                    </div>
+
+                                    <div class="form-group-tags">
+                                        {% if result.time != '-1' %}
+                                            {{ result.time }};&nbsp;{{ result.tags }}
+                                        {% else %}
+                                            {{ result.tags }}
+                                        {% endif %}
                                     </div>
 
                                     <div class="form-group">
-                                        <p>Tags : {{ result.tags }} </p>
-
+                                        <p>{{ result.description }} </p>
                                     </div>
 
-                                    <div class="form-group">
-                                        <p>Description : {{ result.description }} </p>
-                                    </div>
+                                    <img src={{ result.imgurl }} height="200" alt=""/>
                                     {#                    <div class="form-group">#}
                                     {#                        <p>Email : {{result.email}} </p>#}
                                     {#                    </div>#}

@@ -77,6 +77,13 @@ def search_recipe(request):
         recipes = SearchQuerySet().models(Recipe).exclude(no_such_field='x').filter(content=name)
         searched_data = []
         for i in recipes:
+            i.tags = i.tags.split(',')
+            tags = ''
+            if len(i.tags) > 5:
+                i.tags = i.tags[0:5]
+            for tag in i.tags:
+                tags += ', ' + tag
+            i.tags = tags[2:]
             recipe = {
                 'name': i.name,
                 'url': i.url,
