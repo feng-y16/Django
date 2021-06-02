@@ -67,7 +67,8 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None, target_path=N
                              "Chrome/89.0.4389.82 Safari/537.36",
                }
     try:
-        with requests.get('https://www.yummly.com/recipes?q=' + query + '&taste-pref-appended=true', headers=headers) as r:
+        with requests.get('https://www.yummly.com/recipes?q=' + query + '&taste-pref-appended=true',
+                          headers=headers) as r:
             SERP = html2text(r.content.decode()).replace('\n', '')
     except requests.exceptions.ChunkedEncodingError:
         return []
@@ -136,6 +137,9 @@ def search_yummly(query='cheese', url_num=10, sql_connection=None, target_path=N
                 try:
                     index = recipe_data['nutrition_keys'].index(nutrition_key)
                     recipe_data[nutrition_key.lower()] = recipe_data['nutrition_weight'][index]
+                    print("success!")
+                except IndexError:
+                    recipe_data[nutrition_key.lower()] = '-1'
                 except ValueError:
                     recipe_data[nutrition_key.lower()] = '-1'
         else:
