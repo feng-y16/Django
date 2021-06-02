@@ -3,26 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ query }} Recipher</title>
-    <link rel="shortcut icon" type="image/x-icon" href="/static/images/favicon.ico" />
+    <link rel="shortcut icon" type="image/x-icon" href="/static/images/favicon.ico"/>
     <style>
         input[type="text"] {
             size: 400px;
             width: 400px;
             height: 35px;
         }
-        .form-group-title{
+
+        .form-group-title {
             font-size: 20px;
             margin-bottom: 0;
         }
-        .form-group-tags{
+
+        .form-group-tags {
             font-size: 10px;
             color: gray;
         }
 
         .thumbnail img {
+            float: left;
             width: 100%;
             height: auto;
-            object-fit: cover;
+            padding: 0px;
+        {#object-fit: cover;#}{#overflow: hidden;#}
+        }
+
+        .col-sm-6 {
+        {#float: left;#} width: 200px;
+            height: 350px;
+            margin-bottom: 50px;
+            padding: 0px;
+            overflow: hidden;
+            border: none;
+        }
+
+        .form-group {
+            overflow: hidden;
+            border: none;
+        }
+
+        .step-links
+        {
+            {#text-align: center;#}
+            margin-left: 375pt;
         }
 
     </style>
@@ -45,21 +69,21 @@
                 <a class="navbar-brand" href="/search/">HOME</a>
             </div>
             <div class="collapse navbar-collapse" id="myNavbar">
-{#                <ul class="nav navbar-nav navbar-right">#}
-{#                    <li><input type="submit" class="btn btn-primary" value="Add Customer"></li>#}
-{#                </ul>#}
+                {#                <ul class="nav navbar-nav navbar-right">#}
+                {#                    <li><input type="submit" class="btn btn-primary" value="Add Customer"></li>#}
+                {#                </ul>#}
             </div>
         </div>
     </nav>
 {% endblock %}
 {% block content %}
     <div class="container-fluid bg-3 text-center">
-        <img src="/static/images/icon.png" width="96" height="96"  alt="Recipe Searcher"/>
+        <img src="/static/images/icon.png" width="96" height="96" alt="Recipe Searcher"/>
         <span style="font-size: 40pt; vertical-align: middle">
             <strong>&nbsp;Recipe Searcher</strong>
         </span>
-        <br />
-        <br />
+        <br/>
+        <br/>
         <form method="get" action="" class="form" role="form">
             {{ form.non_field_errors }}
             <div class="form-group">
@@ -73,15 +97,15 @@
             </div>
 
             {% if query %}
-                <h3>Results</h3>
+                <h3></h3>
 
                 <div class="container-fluid bg-4 text-left">
                     <div class="row">
 
                         {% for result in page.object_list %}
 
-                            <div class="col-sm-4">
-                                <div class="thumbnail">
+                            <div class="col-sm-6" style="border: none;">
+                                <div class="thumbnail" style="border: none;">
 
                                     <div class="form-group-title">
                                         <a href={{ result.url }}>{{ result.name }}</a>
@@ -98,8 +122,10 @@
                                     <div class="form-group">
                                         <p>{{ result.description }} </p>
                                     </div>
+                                    <div class="form-group">
+                                        <img src={{ result.imgurl }} height="200" alt="Sorry, image not found."/>
+                                    </div>
 
-                                    <img src={{ result.imgurl }} height="200" alt=""/>
                                     {#                    <div class="form-group">#}
                                     {#                        <p>Email : {{result.email}} </p>#}
                                     {#                    </div>#}
@@ -109,14 +135,61 @@
                                 </div>
                             </div>
                         {% empty %}
-
                             <p style="text-align:center">No results found.</p>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <br/>
+                            <br/>
                         {% endfor %}
+                        <div class="pagination">
+                            <span class="step-links">
+                                {% if page.has_previous %}
+                                    <a href="?q={{ query }}&page={{ page.previous_page_number }}">Previous</a>
+                                {% endif %}
+
+                                <span class="current">
+                                    Page {{ page.number }} of {{ page.paginator.num_pages }}
+                                </span>
+
+                                {% if page.has_next %}
+                                    <a href="?q={{ query }}&page={{ page.next_page_number }}">Next</a>
+                                {% endif %}
+                            </span>
+                        </div>
+
                     </div>
                 </div>
 
+            {% else %}
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+
             {% endif %}
+            <footer>
+                Course project for the Web IR course. Created by Yao Feng.
+            </footer>
         </form>
     </div>
-
 {% endblock %}

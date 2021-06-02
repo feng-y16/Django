@@ -84,6 +84,8 @@ def search_recipe(request):
             for tag in i.tags:
                 tags += ', ' + tag
             i.tags = tags[2:]
+            if len(i.description) > 150:
+                i.description = i.description[0:150] + '...'
             recipe = {
                 'name': i.name,
                 'url': i.url,

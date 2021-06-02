@@ -2,7 +2,7 @@
 backup/
 /user/migrations
 djangoProject/whoosh_index/
-db.sqlite3
+*.sqlite3
 */__pycache__
 *.pyc
 *.log
