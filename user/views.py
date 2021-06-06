@@ -15,57 +15,21 @@ from rest_framework.views import APIView
 import django
 from datetime import date
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
+from django.views.decorators.csrf import csrf_exempt
 from haystack.generic_views import SearchView
+import json
+from django.http import HttpResponse
+import collections
+
+cached_results = collections.OrderedDict()
 
 
-# class SearchRecipeView(SearchView):
-#     """My custom search view."""
-#
-#     def get_queryset(self):
-#         queryset = super(SearchRecipeView, self).get_queryset()
-#         # further filter queryset based on some set of criteria
-#         return queryset.filter(pub_date__gte=date(2015, 1, 1))
-#
-#     def get_context_data(self, *args, **kwargs):
-#         context = super(MySearchView, self).get_context_data(*args, **kwargs)
-#         # do something
-#         return context
-
-# Create your views here.
-
-# class SearchRecipeView(APIView):
-#
-#     def get(self, request, format=None):
-#         name = request.GET['q']
-#         print(name)
-#         recipe = SearchQuerySet().models(Recipe).autocomplete(first_name__startswith=name)
-#
-#         searched_data = []
-#         for i in recipe:
-#             all_results = {'name': i.name,
-#                            'url': i.url,
-#                            'tags': i.balance,
-#                            'description': i.description,
-#                            'ingredients': i.ingredients,
-#                            'time': i.time,
-#                            'calories': i.calories,
-#                            'sodium': i.sodium,
-#                            'fat': i.fat,
-#                            'protein': i.protein,
-#                            'carbs': i.carbs,
-#                            'fiber': i.fiber,
-#                            'imgurl': i.imgurl,
-#                            }
-#             searched_data.append(all_results)
-#
-#         return Response(searched_data)
-
-
-# @api_view(['POST'])
+@csrf_exempt
 def search_recipe(request):
     if 'q' in request.GET:
         name = request.GET['q']
+        if len(name) == 0:
+            return render(request, "search/search.html")
         queries_path = 'static/queries/queries.txt'
         if not os.path.isdir(os.path.dirname(queries_path)):
             os.makedirs(os.path.dirname(queries_path))
@@ -74,7 +38,13 @@ def search_recipe(request):
                 f.write('')
         with open(queries_path, 'a') as f:
             f.write(f'{name}\n')
-        recipes = SearchQuerySet().models(Recipe).exclude(no_such_field='x').filter(content=name)
+        if name in cached_results.keys():
+            recipes = cached_results[name]
+        else:
+            recipes = SearchQuerySet().models(Recipe).exclude(no_such_field='x').filter(content=name)
+            cached_results[name] = recipes
+            if len(cached_results) > 1000:
+                cached_results.pop(cached_results.keys()[0])
         searched_data = []
         for i in recipes:
             i.tags = i.tags.split(',')
@@ -115,36 +85,12 @@ def search_recipe(request):
             page = paginator.page(paginator.num_pages)
         return render(request, "search/search.html", {'query': name, 'page': page})
     else:
-        return render(request, "search/search.html", {})
-    # return Response(searched_data)
+        return render(request, "search/search.html")
 
 
-# @api_view(['GET'])
-# def search_recipe(request):
-#     try:
-#         name = request.GET['q']
-#     except django.crawler.datastructures.MultiValueDictKeyError:
-#         return render(request, "search/search.html", {})
-#     print(name)
-#     recipe = SearchQuerySet().models(Recipe).autocomplete(first_name__startswith=name)
-#
-#     searched_data = []
-#     for i in recipe:
-#         all_results = {'name': i.name,
-#                        'url': i.url,
-#                        'tags': i.balance,
-#                        'description': i.description,
-#                        'ingredients': i.ingredients,
-#                        'time': i.time,
-#                        'calories': i.calories,
-#                        'sodium': i.sodium,
-#                        'fat': i.fat,
-#                        'protein': i.protein,
-#                        'carbs': i.carbs,
-#                        'fiber': i.fiber,
-#                        'imgurl': i.imgurl,
-#                        }
-#         searched_data.append(all_results)
-#
-#     # return Response(searched_data)
-#     return render(request, "search/search.html", {"query": name, "object_list": searched_data})
+@csrf_exempt
+def autocomplete(request):
+    # recipes = SearchQuerySet().autocomplete(content_auto=request.GET.get('q', ''))[:5]
+    recipes = SearchQuerySet().models(Recipe).exclude(no_such_field='x').filter(content=request.GET.get('q'))[0:5]
+    suggestions = [recipe.name for recipe in recipes]
+    return HttpResponse(json.dumps({'results': suggestions}), content_type='application/json')
