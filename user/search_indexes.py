@@ -18,6 +18,12 @@ class RecipeIndex(indexes.SearchIndex, indexes.Indexable):
     carbs = indexes.CharField(model_attr='carbs', default='-1')
     fiber = indexes.CharField(model_attr='fiber', default='-1')
     imgurl = indexes.CharField(model_attr='imgurl', default='')
+    suggestions = indexes.FacetCharField()
+
+    def prepare(self, obj):
+        prepared_data = super(RecipeIndex, self).prepare(obj)
+        prepared_data['suggestions'] = prepared_data['text']
+        return prepared_data
 
     def get_model(self):
         return Recipe

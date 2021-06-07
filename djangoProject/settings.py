@@ -92,6 +92,7 @@ HAYSTACK_CONNECTIONS = {
         # 'INDEX_NAME': 'haystack',
         'PATH': os.path.join(os.path.dirname(__file__), 'whoosh_index'),
         # 'PATH': os.path.join(os.path.dirname(__file__), 'xapian_index'),
+        'INCLUDE_SPELLING': True,
     },
 }
 
