@@ -5,8 +5,12 @@ import sqlite3
 import numpy as np
 import threading
 import threadpool
+import multiprocessing
+import requests
 import tqdm
 import time
+import urllib
+import imghdr
 from yummly import search_yummly
 
 
@@ -40,21 +44,35 @@ def main_query():
     # recipe_data_list = search_yummly(query=query, url_num=10, sql_connection=connection)
 
 
+def get_image(url, path):
+    r = requests.get(url)
+    with open(path, 'wb') as f:
+        f.write(r.content)
+
+
 def main_image():
-    connection = sqlite3.connect('db.sqlite3', check_same_thread=False)
-    urls = connection.execute("SELECT URL FROM user_recipe").fetchall()
-    pool = threadpool.ThreadPool(10)
-    with tqdm.tqdm(total=len(queries)) as t:
-        def update(_, __):
-            t.update(1)
-        image_requests = []
-        for url in urls:
-            image_requests.append([url, './static/images/' + url])
-        search_requests = threadpool.makeRequests(search_yummly, image_requests, update)
-        [pool.putRequest(search_request) for search_request in search_requests]
-        pool.wait()
+    connection = sqlite3.connect('db_all.sqlite3', check_same_thread=False)
+    info = connection.execute("SELECT id, imgurl FROM user_recipe").fetchall()
+    pool = multiprocessing.Pool(10)
+    for (id, url) in info:
+        path = './static/images/recipes/' + str(id)
+        if len(url) == 0:
+            continue
+        # get_image(url, path)
+        pool.apply_async(get_image, [url, path])
+    num_jobs = len(pool._cache)
+    last_num_jobs = num_jobs
+    pool.close()
+    with tqdm.tqdm(total=num_jobs) as t:
+        while last_num_jobs > 0:
+            time.sleep(1)
+            current_num_jobs = len(pool._cache)
+            if current_num_jobs < last_num_jobs:
+                t.update(last_num_jobs - current_num_jobs)
+                last_num_jobs = current_num_jobs
+    pool.join()
     connection.close()
 
 
 if __name__ == '__main__':
-    main_query()
+    main_image()

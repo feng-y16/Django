@@ -9,3 +9,4 @@ djangoProject/whoosh_index/
 *.npy
 /static/queries/queries.txt
 *.json
+static/images/recipes/

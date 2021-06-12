@@ -71,8 +71,10 @@ def search_recipe(request):
                 'fiber': i.fiber,
                 'imgurl': i.imgurl,
             }
+            id = i.id.split('.')[-1]
+            if os.path.exists('static/images/recipes/' + id):
+                recipe['imgurl'] = '/static/images/recipes/' + id
             searched_data.append(recipe)
-        # print(searched_data)
         paginator = Paginator(searched_data, 10)
         page = request.GET.get('page')
         try:
