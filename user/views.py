@@ -92,9 +92,9 @@ def search_recipe(request):
 def autocomplete(request):
     recipes = SearchQuerySet().models(Recipe).exclude(no_such_field='x').filter(content=request.GET.get('q'))[0:5]
     suggestions = [recipe.name for recipe in recipes]
-    other_suggestion = SearchQuerySet().models(Recipe).exclude(no_such_field='x').\
-        spelling_suggestion(request.GET.get('q'))
-    if other_suggestion is not None:
-        if len(other_suggestion) > 1 and len(suggestions) < 5:
-            suggestions.append(other_suggestions)
+    # other_suggestion = SearchQuerySet().models(Recipe).exclude(no_such_field='x').\
+    #     spelling_suggestion(request.GET.get('q'))
+    # if other_suggestion is not None:
+    #     if len(other_suggestion) > 1 and len(suggestions) < 5:
+    #         suggestions.append(other_suggestions)
     return HttpResponse(json.dumps({'results': suggestions}), content_type='application/json')

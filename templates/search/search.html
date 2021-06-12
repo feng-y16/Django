@@ -60,9 +60,18 @@
                                 </div>
                                 <div class="form-group-tags">
                                     {% if result.time != '-1' %}
-                                        {{ result.time }};&nbsp;{{ result.tags }}
+                                        {{ result.time }};&nbsp;{{ result.tags }};
                                     {% else %}
                                         {{ result.tags }}
+                                    {% endif %}
+                                    {% if result.calories != '-1' %}
+                                        &nbsp;{{ result.calories }};
+                                    {% endif %}
+                                    {% if result.protein != '-1' %}
+                                        &nbsp;protein: {{ result.protein }};
+                                    {% endif %}
+                                    {% if result.fat != '-1' %}
+                                        &nbsp;fat: {{ result.fat }}
                                     {% endif %}
                                 </div>
                                 <div class="form-group">

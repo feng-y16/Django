@@ -8,3 +8,4 @@ djangoProject/whoosh_index/
 *.log
 *.npy
 /static/queries/queries.txt
+*.json

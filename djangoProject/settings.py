@@ -80,7 +80,7 @@ WSGI_APPLICATION = 'djangoProject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': os.path.join(BASE_DIR, 'db_all.sqlite3'),
     }
 }
 
@@ -92,7 +92,7 @@ HAYSTACK_CONNECTIONS = {
         # 'INDEX_NAME': 'haystack',
         'PATH': os.path.join(os.path.dirname(__file__), 'whoosh_index'),
         # 'PATH': os.path.join(os.path.dirname(__file__), 'xapian_index'),
-        'INCLUDE_SPELLING': True,
+        # 'INCLUDE_SPELLING': True,
     },
 }
 
